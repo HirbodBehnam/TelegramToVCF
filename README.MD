@@ -8,8 +8,8 @@ At first build this application or use the precompiled binaries on releases page
 to set some environment variables through your terminal:
 
 ```bash
-export APP_ID=abcd
-export APP_HASH=1234
+export APP_ID=1234
+export APP_HASH=abcd
 export PHONE="+989123456789"
 export DOWNLOAD_PHOTOS=true # Optional; There is no need to have this if you don't want the pictures
 ```
