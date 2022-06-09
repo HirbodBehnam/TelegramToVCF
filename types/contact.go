@@ -68,11 +68,11 @@ func (c Contact) AppendAsVCF(w io.Writer) error {
 
 // asUTF8Quoted writes the input to output as UTF0-8 quoted
 func asUTF8Quoted(in string, out io.Writer) error {
+	var outBytes [3]byte
+	outBytes[0] = '='
 	for i := 0; i < len(in); i++ {
 		var inByte = [1]byte{in[i]}
-		var outBytes [3]byte
 		hex.Encode(outBytes[1:], inByte[:])
-		outBytes[0] = '='
 		_, err := out.Write(bytes.ToUpper(outBytes[:]))
 		if err != nil {
 			return err

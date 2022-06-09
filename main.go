@@ -11,6 +11,7 @@ import (
 	"github.com/gotd/td/telegram/auth"
 	"github.com/gotd/td/telegram/downloader"
 	"github.com/gotd/td/tg"
+	"github.com/gotd/td/tgerr"
 	"log"
 	"os"
 	"time"
@@ -64,22 +65,22 @@ func main() {
 }
 
 func saveContacts(ctx context.Context, client *tg.Client, users []tg.UserClass) error {
+	fmt.Println("Fetching contacts...")
 	output, err := os.Create("contacts.vcf")
 	if err != nil {
 		return err
 	}
-	defer func(output *os.File) {
-		_ = output.Close()
-	}(output)
+	defer output.Close()
 	dl := downloader.NewDownloader()
+	var photoBuffer bytes.Buffer // reuse the buffer
 	for _, userContact := range users {
 		user, ok := userContact.AsNotEmpty()
 		if !ok {
-			fmt.Println("not ok in ", userContact.String())
+			fmt.Println("not ok in", userContact.String())
 			continue
 		}
 		// Download profile photo if possible
-		var photoBuffer bytes.Buffer
+		photoBuffer.Reset() // reset the buffer for new file
 		if downloadPhotos && user.Photo != nil {
 			if photo, ok := user.Photo.AsNotEmpty(); ok && !photo.HasVideo {
 				peer := &tg.InputPeerPhotoFileLocation{
@@ -89,9 +90,15 @@ func saveContacts(ctx context.Context, client *tg.Client, users []tg.UserClass) 
 					},
 					PhotoID: photo.PhotoID,
 				}
-				_, err = dl.Download(client, peer).Stream(ctx, &photoBuffer)
-				if err != nil {
-					fmt.Println(err)
+				for { // retry if flood
+					_, err = dl.Download(client, peer).Stream(ctx, &photoBuffer)
+					if flood, _ := tgerr.FloodWait(ctx, err); flood {
+						continue // try again!
+					}
+					if err != nil {
+						fmt.Println("cannot download photo:", err)
+					}
+					break
 				}
 			}
 		}
