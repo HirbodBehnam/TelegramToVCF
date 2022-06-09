@@ -19,13 +19,12 @@ type Contact struct {
 // ContactFromUser converts a tg.User to Contact
 // Pass nil as image if it doesn't exist
 func ContactFromUser(user *tg.User, image []byte) Contact {
-	c := Contact{
+	return Contact{
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Phone:     user.Phone,
 		Thumb:     image,
 	}
-	return c
 }
 
 // AppendAsVCF writes the output of
@@ -100,6 +99,8 @@ func writePhoneNumber(phone string, out io.Writer) error {
 	return err
 }
 
+// writeProfilePhoto writes the photo bytes to VCF file output
+// It does nothing if the len(photo) is zero
 func writeProfilePhoto(photo []byte, out io.Writer) error {
 	if len(photo) == 0 {
 		return nil
